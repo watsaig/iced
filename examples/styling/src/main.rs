@@ -10,6 +10,7 @@ use iced::{Center, Color, Element, Fill, Subscription, Theme};
 pub fn main() -> iced::Result {
     let win_settings = window::Settings {
         platform_specific: PlatformSpecific {
+            #[cfg(target_os = "macos")]
             blur_radius: 60,
             ..Default::default()
         },
