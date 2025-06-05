@@ -4,11 +4,22 @@ use iced::widget::{
     progress_bar, row, scrollable, slider, text, text_input, toggler,
     vertical_rule, vertical_space,
 };
-use iced::{Center, Element, Fill, Subscription, Theme};
+use iced::window::{self, settings::PlatformSpecific};
+use iced::{Center, Color, Element, Fill, Subscription, Theme};
 
 pub fn main() -> iced::Result {
+    let win_settings = window::Settings {
+        platform_specific: PlatformSpecific {
+            blur_radius: 60,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
     iced::application(Styling::default, Styling::update, Styling::view)
         .subscription(Styling::subscription)
+        .window(win_settings)
+        .transparent(true)
+        .blur(true)
         .theme(Styling::theme)
         .run()
 }
@@ -147,7 +158,21 @@ impl Styling {
         .padding(20)
         .max_width(600);
 
-        center(content).into()
+        // Translucent container for the main content, surrounded by a fully transparent container
+        let content =
+            container(content).center_x(Fill).style(|_theme: &Theme| {
+                container::Style {
+                    background: Some(
+                        Color::from_rgba(0.9, 0.9, 0.9, 0.5).into(),
+                    ),
+                    ..Default::default()
+                }
+            });
+
+        center(content)
+            .padding(50)
+            .style(container::transparent)
+            .into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -164,7 +189,16 @@ impl Styling {
     }
 
     fn theme(&self) -> Theme {
-        self.theme.clone()
+        let bg = self
+            .theme
+            .palette()
+            .background
+            .scale_alpha(self.slider_value / 100.0);
+        let palette = iced::theme::Palette {
+            background: bg,
+            ..self.theme.palette()
+        };
+        iced::Theme::custom("custom".to_string(), palette)
     }
 }
 
