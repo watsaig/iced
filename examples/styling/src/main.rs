@@ -1,4 +1,3 @@
-use iced::keyboard;
 use iced::widget::{
     button, center, checkbox, column, container, horizontal_rule, pick_list,
     progress_bar, row, scrollable, slider, text, text_input, toggler,
@@ -6,6 +5,10 @@ use iced::widget::{
 };
 use iced::window::{self, settings::PlatformSpecific};
 use iced::{Center, Color, Element, Fill, Subscription, Theme};
+use iced::{Task, keyboard};
+
+const DEFAULT_TRANSPARENCY: bool = true;
+const DEFAULT_BLUR: bool = true;
 
 pub fn main() -> iced::Result {
     let win_settings = window::Settings {
@@ -14,24 +17,35 @@ pub fn main() -> iced::Result {
             blur_radius: 60,
             ..Default::default()
         },
+        blur: DEFAULT_BLUR,
+        transparent: DEFAULT_TRANSPARENCY,
         ..Default::default()
     };
     iced::application(Styling::default, Styling::update, Styling::view)
         .subscription(Styling::subscription)
         .window(win_settings)
-        .transparent(true)
-        .blur(true)
         .theme(Styling::theme)
         .run()
 }
 
-#[derive(Default)]
 struct Styling {
     theme: Theme,
     input_value: String,
     slider_value: f32,
     checkbox_value: bool,
     toggler_value: bool,
+}
+
+impl Default for Styling {
+    fn default() -> Self {
+        Self {
+            theme: Theme::default(),
+            input_value: String::new(),
+            slider_value: 0.,
+            checkbox_value: DEFAULT_BLUR,
+            toggler_value: DEFAULT_TRANSPARENCY,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +61,7 @@ enum Message {
 }
 
 impl Styling {
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::ThemeChanged(theme) => {
                 self.theme = theme;
@@ -55,8 +69,16 @@ impl Styling {
             Message::InputChanged(value) => self.input_value = value,
             Message::ButtonPressed => {}
             Message::SliderChanged(value) => self.slider_value = value,
-            Message::CheckboxToggled(value) => self.checkbox_value = value,
-            Message::TogglerToggled(value) => self.toggler_value = value,
+            Message::CheckboxToggled(value) => {
+                self.checkbox_value = value;
+                return window::get_latest()
+                    .and_then(move |id| window::set_blur(id, value));
+            }
+            Message::TogglerToggled(value) => {
+                self.toggler_value = value;
+                return window::get_latest()
+                    .and_then(move |id| window::set_transparent(id, value));
+            }
             Message::PreviousTheme | Message::NextTheme => {
                 if let Some(current) = Theme::ALL
                     .iter()
@@ -75,6 +97,7 @@ impl Styling {
                 }
             }
         }
+        Task::none()
     }
 
     fn view(&self) -> Element<Message> {
@@ -114,11 +137,11 @@ impl Styling {
         .width(Fill)
         .height(100);
 
-        let checkbox = checkbox("Check me!", self.checkbox_value)
+        let checkbox = checkbox("Toggle blur", self.checkbox_value)
             .on_toggle(Message::CheckboxToggled);
 
         let toggler = toggler(self.toggler_value)
-            .label("Toggle me!")
+            .label("Toggle transparency")
             .on_toggle(Message::TogglerToggled)
             .spacing(10);
 
@@ -218,7 +241,7 @@ mod tests {
             .cloned()
             .map(|theme| {
                 let mut styling = Styling::default();
-                styling.update(Message::ThemeChanged(theme));
+                let _ = styling.update(Message::ThemeChanged(theme));
 
                 let theme = styling.theme();
 
