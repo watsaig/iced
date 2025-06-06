@@ -1392,6 +1392,16 @@ fn run_action<P, C>(
                     let _ = window.raw.set_cursor_hittest(true);
                 }
             }
+            window::Action::SetBlur(id, blur) => {
+                if let Some(window) = window_manager.get_mut(id) {
+                    window.raw.set_blur(blur);
+                }
+            }
+            window::Action::SetTransparent(id, transparent) => {
+                if let Some(window) = window_manager.get_mut(id) {
+                    window.raw.set_transparent(transparent);
+                }
+            }
         },
         Action::System(action) => match action {
             system::Action::QueryInformation(_channel) => {

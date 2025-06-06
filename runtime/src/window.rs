@@ -175,6 +175,12 @@ pub enum Action {
 
     /// Set the window size increment.
     SetResizeIncrements(Id, Option<Size>),
+
+    /// Set the window to be blurred or not.
+    SetBlur(Id, bool),
+
+    /// Set the window to be transparent or not.
+    SetTransparent(Id, bool),
 }
 
 /// Subscribes to the frames of the window of the running application.
@@ -311,6 +317,19 @@ pub fn set_min_size<T>(id: Id, size: Option<Size>) -> Task<T> {
 pub fn set_resize_increments<T>(id: Id, increments: Option<Size>) -> Task<T> {
     task::effect(crate::Action::Window(Action::SetResizeIncrements(
         id, increments,
+    )))
+}
+
+/// Set the inner minimum size of the window.
+pub fn set_blur<T>(id: Id, blur: bool) -> Task<T> {
+    task::effect(crate::Action::Window(Action::SetBlur(id, blur)))
+}
+
+/// Set the window to be transparent or not.
+pub fn set_transparent<T>(id: Id, transparent: bool) -> Task<T> {
+    task::effect(crate::Action::Window(Action::SetTransparent(
+        id,
+        transparent,
     )))
 }
 
